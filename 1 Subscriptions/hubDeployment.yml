@@ -1,0 +1,179 @@
+# .Synopsis
+#     Hub Deployment pipeline
+
+# .NOTES
+#     Author     : Roman Rabodzei
+#     Version    : 1.0.230707
+#
+#             _
+#         .__(.)<  (MEOW)
+#          \___)
+#  ~~~~~~~~~~~~~~~~~~~~~~~~
+
+name: 
+  '${{parameters.CustomerCode}}_${{parameters.Subscription}}_Hub_$(Location)_1.0.0$(Rev:.r)'
+
+trigger: 
+  none
+
+pr:
+  none
+
+parameters:
+  - name: CustomerCode
+    displayName: Specify Customer Code
+    type: string
+
+  - name: Subscription
+    displayName: Specify Subscription (HUB / DEV/TEST / ACC / PROD)
+    type: string
+
+  - name: bastionTemplate
+    displayName: Bastion Deployment
+    type: boolean
+    default: true
+    values:
+      - true
+      - false
+
+  - name: frontdoorTemplate
+    displayName: FrontDoor Deployment
+    type: boolean
+    default: false
+    values:
+      - true
+      - false
+
+variables:
+  - group: "${{ parameters.CustomerCode }}-${{ parameters.Subscription }} Infra"
+
+pool:
+  vmImage: windows-latest
+
+stages:
+- stage: Checking_Templates
+  displayName: Checking Templates
+  variables:
+    - group: "${{ parameters.CustomerCode }}-${{ parameters.Subscription }} Infra"
+  jobs:
+  - job: Checking_Templates
+    timeoutInMinutes: 0
+    cancelTimeoutInMinutes: 360
+    displayName: Checking Templates
+    steps:
+      - task: PowerShell@2
+        displayName: Agent IP
+        enabled: true
+        inputs:
+          targetType: "inline"
+          script: |
+            $hostIp = (Invoke-WebRequest http://ipv4.icanhazip.com).Content
+            Write-Host "`nAgent Public IP:"
+            Write-Host "##[section]$hostIp"
+          pwsh: true
+          workingDirectory: "$(system.defaultWorkingDirectory)"
+          
+      - task: qetza.replacetokens.replacetokens-task.replacetokens@3
+        displayName: Replacing Variables
+        enabled: true
+        inputs:
+          rootDirectory: "$(system.defaultWorkingDirectory)"
+          targetFiles: "**/*.json"
+          encoding: "auto"
+          writeBOM: true
+          verbosity: "detailed"
+          actionOnMissing: "continue"
+          keepToken: false
+          tokenPrefix: "#{"
+          tokenSuffix: "}#"
+
+      - task: PowerShell@2
+        displayName: Running Bicep linter
+        enabled: true
+        inputs:
+          targetType: "inline"
+          script: |
+              az bicep build --file './2 Layers/public-connectivity.bicep'
+          pwsh: true
+          workingDirectory: "$(system.defaultWorkingDirectory)"
+
+      - task: AzureCLI@2
+        name: RunPreflightValidation
+        displayName: Running preflight validation
+        enabled: true
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: 'pscore'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az deployment sub validate --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/public-connectivity.bicep' --parameters bastionTemplate=${{parameters.bastionTemplate}} frontdoorTemplate=${{parameters.frontdoorTemplate}} subscription=$(subscription) guid=$(customerAttributionGuid)
+          workingDirectory: "$(system.defaultWorkingDirectory)"
+
+      - task: AzureCLI@2
+        name: RunWhatIf
+        displayName: Previewing Azure changes
+        enabled: true
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: 'pscore'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az deployment sub what-if --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/public-connectivity.bicep' --parameters bastionTemplate=${{parameters.bastionTemplate}} frontdoorTemplate=${{parameters.frontdoorTemplate}} subscription=$(subscription) guid=$(customerAttributionGuid)
+          workingDirectory: "$(system.defaultWorkingDirectory)"
+
+- stage: Deploying_Infractructure
+  displayName: Deploying Infractructure
+  variables:
+  - group: "${{ parameters.CustomerCode }}-${{ parameters.Subscription }} Infra"
+  jobs:
+  - deployment: Deploy
+    environment: ${{parameters.environment}}-IaC
+  - job: Deploying_Infractructure
+    displayName: Deploying Environment
+    timeoutInMinutes: 0
+    cancelTimeoutInMinutes: 360
+    continueOnError: true
+    strategy:
+      runOnce:
+        deploy:
+    steps:
+      - checkout: self
+      - task: PowerShell@2
+        displayName: Agent IP
+        enabled: true
+        inputs:
+          targetType: "inline"
+          script: |
+            $hostIp = (Invoke-WebRequest http://ipv4.icanhazip.com).Content
+            Write-Host "`nAgent Public IP:"
+            Write-Host "##[section]$hostIp"
+          pwsh: true
+          workingDirectory: "$(system.defaultWorkingDirectory)"
+
+      - task: qetza.replacetokens.replacetokens-task.replacetokens@3
+        displayName: Replacing Variables
+        continueOnError: true
+        enabled: true
+        inputs:
+          rootDirectory: "$(system.defaultWorkingDirectory)"
+          targetFiles: "**/*.json"
+          encoding: "auto"
+          writeBOM: true
+          verbosity: "detailed"
+          actionOnMissing: "continue"
+          keepToken: false
+          tokenPrefix: "#{"
+          tokenSuffix: "}#"
+
+      - task: AzureCLI@2
+        name: DeployBicepFile
+        displayName: Deploying Bicep Templates
+        continueOnError: true
+        enabled: true
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: 'pscore'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az deployment sub create --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/public-connectivity.bicep' --parameters bastionTemplate=${{parameters.bastionTemplate}} frontdoorTemplate=${{parameters.frontdoorTemplate}} subscription=$(subscription) guid=$(customerAttributionGuid)
+          workingDirectory: '$(system.defaultWorkingDirectory)'

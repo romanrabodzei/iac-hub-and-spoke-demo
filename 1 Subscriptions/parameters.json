@@ -1,0 +1,57 @@
+{
+    "customerCode": "#{customerCode}#",
+    "shortLocation": "#{shortLocation}#",
+    "hub_config": {
+        "virtualNetworkAddressPrefix": "10.0.0.0/24",
+        "virtualNetworkSubnetPrefix": "10.0.0.0/26",
+        "frontDoor": {
+            "frontDoorName": "#{customerCode}#-fb-hub-#{shortLocation}#-01",
+            "frontDoorPrefix": "#{customerCode}#-#{location}#",
+            "frontDoorBackendServiceName": "",
+            "frontDoorBackendAddress001": "",
+            "frontDoorBackendAddress002": ""
+        }
+    },
+    "devtest_config": {
+        "devtest_landingzoneconfig": {
+            "virtualNetworks": [
+                {
+                    "virtualNetworkAddressPrefix": "10.1.0.0/22",
+                    "virtualNetworkSubnetPrefix": "10.1.0.0/26"
+                },
+                {
+                    "virtualNetworkAddressPrefix": "10.2.0.0/22",
+                    "virtualNetworkSubnetPrefix": "10.2.0.0/26"
+                }
+            ]
+        }
+    },
+    "acc_config": {
+        "acc_landingzoneconfig": {
+            "virtualNetworks": [
+                {
+                    "virtualNetworkAddressPrefix": "10.3.0.0/22",
+                    "virtualNetworkSubnetPrefix": "10.3.0.0/26"
+                },
+                {
+                    "virtualNetworkAddressPrefix": "10.4.0.0/22",
+                    "virtualNetworkSubnetPrefix": "10.4.0.0/26"
+                }
+            ]
+        }
+    },
+    "prod_config": {
+        "prod_landingzoneconfig": {
+            "virtualNetworks": [
+                {
+                    "virtualNetworkAddressPrefix": "10.5.0.0/22",
+                    "virtualNetworkSubnetPrefix": "10.5.0.0/26"
+                }
+            ]
+        }
+    },
+    "logAnalyticsWorkspaceResourceGroupName": "#{customerCode}#-rg-ucr-#{subscription}#-#{shortLocation}#-01",
+    "logAnalyticsWorkspaceName": "#{customerCode}#-law-ucr-#{subscription}#-#{shortLocation}#-01",
+    "customerDomain": "",
+    "TagManagedBy": "Roman Rabdozei"
+}
