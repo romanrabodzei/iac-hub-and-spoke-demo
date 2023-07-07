@@ -95,7 +95,7 @@ stages:
           inputs:
             targetType: "inline"
             script: |
-                az bicep build --file './2 Layers/networking.bicep'
+                az bicep build --file './2 Layers/spoke-networking.bicep'
             pwsh: true
             workingDirectory: "$(system.defaultWorkingDirectory)"
 
@@ -108,7 +108,7 @@ stages:
             scriptType: 'pscore'
             scriptLocation: 'inlineScript'
             inlineScript: |
-              az deployment sub validate --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/networking.bicep' --parameters networkingTemplate=${{parameters.networkingTemplate}} guid=$(customerAttributionGuid) subscription=$(subscription)
+              az deployment sub validate --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/spoke-networking.bicep' --parameters networkingTemplate=${{parameters.networkingTemplate}} guid=$(customerAttributionGuid) subscription=$(subscription)
             workingDirectory: "$(system.defaultWorkingDirectory)"
 
         - task: AzureCLI@2
@@ -120,7 +120,7 @@ stages:
             scriptType: 'pscore'
             scriptLocation: 'inlineScript'
             inlineScript: |
-              az deployment sub what-if --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/networking.bicep' --parameters networkingTemplate=${{parameters.networkingTemplate}} guid=$(customerAttributionGuid) subscription=$(subscription)
+              az deployment sub what-if --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/spoke-networking.bicep' --parameters networkingTemplate=${{parameters.networkingTemplate}} guid=$(customerAttributionGuid) subscription=$(subscription)
             workingDirectory: "$(system.defaultWorkingDirectory)"
 
       - ${{ if eq( parameters['vaultTemplate'], 'true') }}:
@@ -214,7 +214,7 @@ stages:
             scriptType: 'pscore'
             scriptLocation: 'inlineScript'
             inlineScript: |
-              az deployment sub create --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/networking.bicep' --parameters networkingTemplate=${{parameters.networkingTemplate}} guid=$(customerAttributionGuid) subscription=$(subscription)
+              az deployment sub create --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/spoke-networking.bicep' --parameters networkingTemplate=${{parameters.networkingTemplate}} guid=$(customerAttributionGuid) subscription=$(subscription)
             workingDirectory: '$(system.defaultWorkingDirectory)'
 
       - ${{ if eq( parameters['vaultTemplate'], 'true') }}:

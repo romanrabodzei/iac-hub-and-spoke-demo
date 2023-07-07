@@ -93,7 +93,7 @@ stages:
         inputs:
           targetType: "inline"
           script: |
-              az bicep build --file './2 Layers/public-connectivity.bicep'
+              az bicep build --file './2 Layers/hub-networking.bicep'
           pwsh: true
           workingDirectory: "$(system.defaultWorkingDirectory)"
 
@@ -106,7 +106,7 @@ stages:
           scriptType: 'pscore'
           scriptLocation: 'inlineScript'
           inlineScript: |
-            az deployment sub validate --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/public-connectivity.bicep' --parameters bastionTemplate=${{parameters.bastionTemplate}} frontdoorTemplate=${{parameters.frontdoorTemplate}} subscription=$(subscription) guid=$(customerAttributionGuid)
+            az deployment sub validate --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/hub-networking.bicep' --parameters bastionTemplate=${{parameters.bastionTemplate}} frontdoorTemplate=${{parameters.frontdoorTemplate}} subscription=$(subscription) guid=$(customerAttributionGuid)
           workingDirectory: "$(system.defaultWorkingDirectory)"
 
       - task: AzureCLI@2
@@ -118,7 +118,7 @@ stages:
           scriptType: 'pscore'
           scriptLocation: 'inlineScript'
           inlineScript: |
-            az deployment sub what-if --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/public-connectivity.bicep' --parameters bastionTemplate=${{parameters.bastionTemplate}} frontdoorTemplate=${{parameters.frontdoorTemplate}} subscription=$(subscription) guid=$(customerAttributionGuid)
+            az deployment sub what-if --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/hub-networking.bicep' --parameters bastionTemplate=${{parameters.bastionTemplate}} frontdoorTemplate=${{parameters.frontdoorTemplate}} subscription=$(subscription) guid=$(customerAttributionGuid)
           workingDirectory: "$(system.defaultWorkingDirectory)"
 
 - stage: Deploying_Infractructure
@@ -175,5 +175,5 @@ stages:
           scriptType: 'pscore'
           scriptLocation: 'inlineScript'
           inlineScript: |
-            az deployment sub create --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/public-connectivity.bicep' --parameters bastionTemplate=${{parameters.bastionTemplate}} frontdoorTemplate=${{parameters.frontdoorTemplate}} subscription=$(subscription) guid=$(customerAttributionGuid)
+            az deployment sub create --name '$(Build.BuildNumber)' --location "$(location)".ToLower() --template-file './2 Layers/hub-networking.bicep' --parameters bastionTemplate=${{parameters.bastionTemplate}} frontdoorTemplate=${{parameters.frontdoorTemplate}} subscription=$(subscription) guid=$(customerAttributionGuid)
           workingDirectory: '$(system.defaultWorkingDirectory)'
